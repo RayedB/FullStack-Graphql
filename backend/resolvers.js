@@ -1,3 +1,6 @@
+import mongoose from 'mongoose';
+import courseModel from './models/course';
+
 var courseData = [
   {
     id: 'abcd',
@@ -31,7 +34,12 @@ var courseData = [
 const resolvers = {
   Query: {
     allCourses:(root,{searchTerm}) => {
-      return courseData
+      // return courseData
+      if (searchTerm !== '') {
+        return courseModel.find({$text: {$search: searchTerm}}).sort({voteCount: 'desc'})
+      } else {
+        return courseModel.find().sort({voteCount: 'desc'})
+      }
     },
     course: (root,{id}) => {
       return courseModel.findOne({id: id});
@@ -39,15 +47,19 @@ const resolvers = {
   },
   Mutation: {
     upVote: (root, {id}) => {
-      const course = courseData.filter(res => {return res.id == id})[0];
-      course.voteCount++ ;
+      return courseModel.findOneAndUpdate({id: id}, { $inc: {"voteCount": 1}},{ returnNewDocument: true });
+      // const course = courseData.filter(res => {return res.id == id})[0];
+      // course.voteCount++ ;
     },
     downVote: (root, {id}) => {
-      const course = courseData.filter(res => {return res.id == id})[0];
-      course.voteCount-- ;
+      return courseModel.findOneAndUpdate({id: id}, { $inc: {"voteCount": -1}},{ returnNewDocument: true });
+      // const course = courseData.filter(res => {return res.id == id})[0];
+      // course.voteCount-- ;
     },
     addCourse: (root,{title, author, description, topic, url}) => {
-      return null
+      const course = new courseModel({title: title, author: author, description: description, topic: topic, url: url})
+      return course.save();
+      // return null
     }
   }
 }
